@@ -72,7 +72,7 @@ st.markdown("""
 # Header
 col1, col2 = st.columns([3, 1])
 with col1:
-    st.title("🚀 Project Atlas Copco")
+    st.title("🚀 KTJ049-Project Atlas Copco-Project Atlas Copco")
     st.subheader("Weekly Status Update")
 with col2:
     st.metric("Week", f"{datetime.now().strftime('%W')}", "Current")
