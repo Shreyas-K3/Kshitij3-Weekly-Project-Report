@@ -5,6 +5,7 @@ from data_store import load_data
 # Load shared data from server
 data = load_data()
 VALID_PROJECT_CODE = data.get("project_code", "ATLAS2025")
+ALLOWED_NAMES = data.get("allowed_names", [])
 
 # Page config
 st.set_page_config(
@@ -114,38 +115,41 @@ if not st.session_state.authenticated:
         </div>
     """, unsafe_allow_html=True)
     
-    # Create centered columns for better form layout
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("### 👤 Authentication Required")
+        st.markdown("### 👤 Authentication Required (Pre-approved Only)")
         
-        # Input fields
         name = st.text_input("Full Name", placeholder="Enter your full name", key="name_input")
         project_code = st.text_input("Project Code", placeholder="Enter project access code", type="password", key="code_input")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Login button
         if st.button("🚀 Access Dashboard", type="primary", use_container_width=True):
-            if name.strip() == "":
+            name_clean = name.strip()
+
+            if name_clean == "":
                 st.error("❌ Please enter your name")
             elif project_code.strip() == "":
                 st.error("❌ Please enter the project code")
-            elif project_code != VALID_PROJECT_CODE:
-                st.error("❌ Invalid project code. Access denied.")
             else:
-                st.session_state.authenticated = True
-                st.session_state.user_name = name
-                st.success(f"✅ Welcome, {name}!")
-                st.rerun()
+                # Check pre-approved names (case-insensitive)
+                allowed_lower = [n.strip().lower() for n in ALLOWED_NAMES]
+                if name_clean.lower() not in allowed_lower:
+                    st.error("❌ Name is not pre-approved. Please contact the project admin.")
+                elif project_code != VALID_PROJECT_CODE:
+                    st.error("❌ Invalid project code. Access denied.")
+                else:
+                    st.session_state.authenticated = True
+                    st.session_state.user_name = name_clean
+                    st.success(f"✅ Welcome, {name_clean}!")
+                    st.rerun()
         
         st.markdown("<br>", unsafe_allow_html=True)
-        st.info(f"💡 **Hint:** Project code format: {VALID_PROJECT_CODE}")
+        st.info("💡 Access is restricted to pre-approved names and a valid project code configured by the admin.")
 
 # Main Dashboard (shown after authentication)
 else:
-    # Welcome banner with logout
     col1, col2 = st.columns([4, 1])
     with col1:
         st.markdown(f"""
@@ -163,7 +167,6 @@ else:
             st.session_state.user_name = ""
             st.rerun()
     
-    # Header
     col1, col2 = st.columns([3, 1])
     with col1:
         st.title(f"🚀 {data['project_name']}")
@@ -173,7 +176,6 @@ else:
 
     st.markdown("---")
 
-    # Status Overview
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -205,7 +207,6 @@ else:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Quick Links Section
     st.markdown('<p class="section-header">🔗 Quick Access Links</p>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
@@ -222,22 +223,20 @@ else:
             </a>
         """, unsafe_allow_html=True)
 
-    # Important Notes
     st.markdown('<p class="section-header">📝 Important Notes</p>', unsafe_allow_html=True)
     st.info(data["notes_markdown"])
 
-    # Current Progress Section
     st.markdown('<p class="section-header">📈 Current Progress Breakdown</p>', unsafe_allow_html=True)
 
     progress_col1, progress_col2 = st.columns(2)
 
     with progress_col1:
-        st.markdown("### Completed Models")
+        st.markdown("### Completed / Main Models")
 
-        st.success("**PHE Model** ✅")
+        st.success(f"**PHE Model** ✅ {int(data['phe_progress'])}%")
         st.progress(float(data["phe_progress"]) / 100.0)
 
-        st.success("**ELEC Model** ✅")
+        st.success(f"**ELEC Model** ✅ {int(data['elec_progress'])}%")
         st.progress(float(data["elec_progress"]) / 100.0)
 
         st.markdown("<small>🔧 Minor clashes resolved (screenshots attached)</small>", unsafe_allow_html=True)
@@ -251,7 +250,6 @@ else:
         st.warning(f"**MECH Model** 🔄 {int(data['mech_progress'])}% Complete")
         st.progress(float(data["mech_progress"]) / 100.0)
 
-    # Next Steps Timeline
     st.markdown('<p class="section-header">🗓 Next Steps - 4-Day Plan</p>', unsafe_allow_html=True)
 
     timeline_col1, timeline_col2 = st.columns([1, 3])
@@ -268,7 +266,6 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-    # Footer
     st.markdown("---")
     st.markdown("""
         <div class="info-box">
@@ -277,11 +274,9 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-    # Expandable details section
     with st.expander("📎 View Full Email Content"):
         st.markdown(data["email_body"])
 
-    # Add a download-like action (demo)
     if st.button("📥 Export Status Report", type="primary"):
         st.balloons()
         st.success("Status report exported successfully! (Demo feature)")
