@@ -3,7 +3,7 @@ from datetime import datetime
 
 # Page config
 st.set_page_config(
-    page_title="Project Atlas Copco - Status Update",
+    page_title="KTJ049-Project Atlas Copco - Weekly Status Update",
     page_icon="🚀",
     layout="wide"
 )
