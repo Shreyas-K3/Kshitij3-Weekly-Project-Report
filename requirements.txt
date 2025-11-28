@@ -1,1 +1,5 @@
-streamlit
+streamlit>=1.30
+sqlalchemy>=1.4
+pandas>=2.0
+python-dateutil>=2.8
+typing_extensions
