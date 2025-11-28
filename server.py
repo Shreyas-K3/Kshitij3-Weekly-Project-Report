@@ -1,114 +1,73 @@
-import streamlit as st
-from data_store import load_data, save_data
+import json
+import os
 
-st.set_page_config(
-    page_title="Atlas Copco - Admin Panel",
-    page_icon="🛠️",
-    layout="wide"
-)
+FILE_PATH = "project_status.json"
 
-st.title("🛠️ Project Atlas Copco – Admin / Server")
-st.caption("Change values here. Viewer app will reflect updates.")
+DEFAULT_DATA = {
+    "project_name": "Project Atlas Copco",
+    "project_code": "ATLAS2025",
 
-data = load_data()
+    # Pre-approved names who can log into the client dashboard
+    "allowed_names": [
+        "Shreyas",
+        "Client User 1",
+        "Client User 2"
+    ],
 
-with st.form("edit_form"):
-    st.subheader("Basic Info")
-    col1, col2 = st.columns(2)
-    with col1:
-        data["project_name"] = st.text_input("Project Name", value=data["project_name"])
-        data["project_code"] = st.text_input("Project Access Code (for client login)", value=data["project_code"])
-    with col2:
-        data["project_completion"] = st.number_input(
-            "Project Completion (%)",
-            min_value=0, max_value=100,
-            value=int(data["project_completion"])
-        )
-        data["project_status_label"] = st.text_input("Project Status Label", value=data["project_status_label"])
+    "project_completion": 83,      # %
+    "project_status_label": "On Track",
 
-    st.markdown("---")
+    "pending_rfis": 6,
+    "rfis_label": "Non-Critical",
 
-    st.subheader("RFIs & Timeline")
-    col3, col4, col5 = st.columns(3)
-    with col3:
-        data["pending_rfis"] = st.number_input(
-            "Pending RFIs (count)",
-            min_value=0,
-            value=int(data["pending_rfis"])
-        )
-    with col4:
-        data["rfis_label"] = st.text_input("RFI Criticality Label", value=data["rfis_label"])
-    with col5:
-        data["timeline_days"] = st.number_input(
-            "Timeline (days in plan)",
-            min_value=0,
-            value=int(data["timeline_days"])
-        )
+    "timeline_days": 4,
 
-    st.markdown("---")
+    "viewer_link": "https://autode.sk/4rgD3cG",
+    "rfi_sheet_link": "https://docs.google.com/spreadsheets/d/1RDRCvOWoVXIMcnYJCmDs8JvboJvep7j-/edit?usp=drive_link&ouid=101341274280914933041&rtpof=true&sd=true",
 
-    st.subheader("Links")
-    data["viewer_link"] = st.text_input("Viewer Link URL", value=data["viewer_link"])
-    data["rfi_sheet_link"] = st.text_input("RFI Sheet URL", value=data["rfi_sheet_link"])
+    "phe_progress": 100,  # %
+    "elec_progress": 100, # %
+    "ff_progress": 80,    # %
+    "mech_progress": 80,  # %
 
-    st.markdown("---")
+    "notes_markdown": """**Action Required:**
+- ⏰ **6 non-critical RFIs** are awaiting responses
+- 🔍 Please review the model viewer and provide feedback
+- ✍️ Update the RFI sheet to maintain project momentum
+""",
 
-    st.subheader("Model Progress (%)")
-    col6, col7 = st.columns(2)
-    with col6:
-        data["phe_progress"] = st.slider(
-            "PHE Model Progress (%)",
-            min_value=0, max_value=100,
-            value=int(data["phe_progress"])
-        )
-        data["elec_progress"] = st.slider(
-            "ELEC Model Progress (%)",
-            min_value=0, max_value=100,
-            value=int(data["elec_progress"])
-        )
-    with col7:
-        data["ff_progress"] = st.slider(
-            "FF Model Progress (%)",
-            min_value=0, max_value=100,
-            value=int(data["ff_progress"])
-        )
-        data["mech_progress"] = st.slider(
-            "MECH Model Progress (%)",
-            min_value=0, max_value=100,
-            value=int(data["mech_progress"])
-        )
+    "days_1_2": "Complete FF and MECH models",
+    "days_1_2_sub": "Target: 100% completion of remaining models",
 
-    st.markdown("---")
+    "days_3_4": "Initiate coordination phase",
+    "days_3_4_sub": "Begin cross-discipline integration",
 
-    st.subheader("Notes (Markdown)")
-    data["notes_markdown"] = st.text_area(
-        "Important Notes (Markdown allowed)",
-        value=data["notes_markdown"],
-        height=180
-    )
+    "email_body": """**Team,**
 
-    st.markdown("---")
+Below is this week's status update for **Project Atlas Copco**.  
+Progress remains steady and we are tracking toward the upcoming milestone.
 
-    st.subheader("Next Steps (4-Day Plan)")
-    col8, col9 = st.columns(2)
-    with col8:
-        data["days_1_2"] = st.text_input("Days 1–2 Main Text", value=data["days_1_2"])
-        data["days_1_2_sub"] = st.text_input("Days 1–2 Sub Text", value=data["days_1_2_sub"])
-    with col9:
-        data["days_3_4"] = st.text_input("Days 3–4 Main Text", value=data["days_3_4"])
-        data["days_3_4_sub"] = st.text_input("Days 3–4 Sub Text", value=data["days_3_4_sub"])
+All metrics and links are provided above in the dashboard format for easy access and tracking."""
+}
 
-    st.markdown("---")
 
-    st.subheader("Email Body (Shown in Expander on Client)")
-    data["email_body"] = st.text_area(
-        "Email Body (Markdown)",
-        value=data["email_body"],
-        height=200
-    )
+def load_data():
+    """Load project data from JSON; fall back to defaults and merge keys."""
+    if os.path.exists(FILE_PATH):
+        try:
+            with open(FILE_PATH, "r", encoding="utf-8") as f:
+                stored = json.load(f)
+        except Exception:
+            return DEFAULT_DATA.copy()
 
-    submitted = st.form_submit_button("💾 Save Changes")
+        data = DEFAULT_DATA.copy()
+        data.update(stored)
+        return data
 
-if submitted:
-    save_data(data)
-    st.success("✅ Data saved! Client viewer will now show updated values.")
+    return DEFAULT_DATA.copy()
+
+
+def save_data(data: dict):
+    """Save project data to JSON."""
+    with open(FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
