@@ -7,6 +7,13 @@ DEFAULT_DATA = {
     "project_name": "Project Atlas Copco",
     "project_code": "ATLAS2025",
 
+    # Pre-approved names who can log into the client dashboard
+    "allowed_names": [
+        "Shreyas",
+        "Client User 1",
+        "Client User 2"
+    ],
+
     "project_completion": 83,      # %
     "project_status_label": "On Track",
 
@@ -45,21 +52,18 @@ All metrics and links are provided above in the dashboard format for easy access
 
 
 def load_data():
-    """Load project data from JSON; fall back to defaults."""
+    """Load project data from JSON; fall back to defaults and merge keys."""
     if os.path.exists(FILE_PATH):
         try:
             with open(FILE_PATH, "r", encoding="utf-8") as f:
                 stored = json.load(f)
         except Exception:
-            # If corrupted, just use defaults
             return DEFAULT_DATA.copy()
 
-        # Merge with defaults so new keys don't break older files
         data = DEFAULT_DATA.copy()
         data.update(stored)
         return data
 
-    # No file yet → use defaults
     return DEFAULT_DATA.copy()
 
 
